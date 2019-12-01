@@ -2,7 +2,45 @@
 #include <fstream>
 #include <mpi.h>
 #include "mapper_context.hpp"
-#include "../config_src/map.hpp"
+#include "config.hpp"
+
+
+std::string getSplit(std::istream& input, size_t start_pos, size_t size) {
+    size_t split_start;
+
+    if (start_pos == 0) {
+        split_start = start_pos;
+    } else {
+        input.seekg(start_pos);
+        
+        input.ignore(size, config::split_separator);
+
+        split_start = input.gcount();
+
+        if (split_start == size) {
+            return std::string();
+        }
+
+        split_start += start_pos;
+    }
+
+    size_t split_end = start_pos + size;
+
+    input.seekg(split_end);
+    
+    input.ignore(std::numeric_limits<std::streamsize>::max(), config::split_separator);
+
+    split_end += input.gcount();
+
+    std::string split;
+    split.resize(split_end - split_start);
+
+    input.clear();
+    input.seekg(split_start);
+    input.read(split.data(), split_end - split_start);
+
+    return split;
+}
 
 
 void mapper_routine(int rank, size_t reducer_count) {
@@ -23,15 +61,13 @@ void mapper_routine(int rank, size_t reducer_count) {
         MPI_Recv(&start_pos, 1, MPI_UINT64_T, 0, 0, MPI_COMM_WORLD, nullptr);
         MPI_Recv(&size, 1, MPI_UINT64_T, 0, 0, MPI_COMM_WORLD, nullptr);
 
-        std::string block;
-        block.resize(size);
-
         std::ifstream file(pathname);
-        file.seekg(start_pos);
-        file.read(block.data(), size);
+        std::string split = getSplit(file, start_pos, size);
         file.close();
 
-        Map(block, context);
+        if (!split.empty()) {
+            config::Map(split, context);
+        }
     }
 
     auto data = context.ejectData();

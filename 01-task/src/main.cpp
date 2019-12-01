@@ -1,10 +1,7 @@
 #include <vector>
 #include <string>
-#include <numeric>
 #include <iostream>
 #include <mpi.h>
-#include <algorithm>
-#include <ostream>
 
 #include "routines.hpp"
 
