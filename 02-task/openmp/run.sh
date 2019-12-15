@@ -1,7 +1,7 @@
 #!/bin/sh
 #SBATCH --partition=RT_study
 #SBATCH --job-name=MapReduce_OMP
-#SBATCH --nodes=2
+#SBATCH --nodes=4
 #SBATCH --ntasks-per-node=1
 #SBATCH --cpus-per-task=16
  

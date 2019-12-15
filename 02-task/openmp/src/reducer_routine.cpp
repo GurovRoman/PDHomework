@@ -31,22 +31,19 @@ void reducer_routine(int rank, int world_size) {
 
     std::sort(pairs.begin(), pairs.end());
 
-    for (auto& pair: pairs) {
-        
-    }
-
+    std::ofstream output("result_" + std::to_string(rank));
 
     #pragma omp parallel default(shared)
     {
         std::list<std::reference_wrapper<std::string>> values;
         std::list<std::string> result;
         
-        size_t chunk_size = pairs.size() / omp_get_num_threads();
+        size_t chunk_size = pairs.size() / omp_get_num_threads() + 1;
 
         #pragma omp for schedule(static, chunk_size)
         for (size_t i = 0; i < pairs.size(); ++i) {
             values.emplace_back(pairs[i].second);
-            if (i == pairs.size() - 1 || pairs[i + 1].first != pairs[i].first) {
+            if (i == pairs.size() - 1  || (i + 1) % chunk_size == 0 || pairs[i + 1].first != pairs[i].first) {
                 auto res = config::Reduce(pairs[i].first, values);
                 result.emplace_back(res.first + '\t' + res.second + '\n');
                 values.clear();
@@ -55,7 +52,6 @@ void reducer_routine(int rank, int world_size) {
 
         #pragma omp critical
         {
-            std::ofstream output("result_" + std::to_string(rank));
             for (auto& res : result) {
                 output << res;
             }
